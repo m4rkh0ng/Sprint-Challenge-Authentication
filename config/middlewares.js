@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const jwtKey = require('../_secrets/keys').jwtKey;
+const secret = jwtKey;
 
 // quickly see what this file exports
 module.exports = {
@@ -26,8 +27,6 @@ function authenticate(req, res, next) {
     });
   }
 }
-
-const secret = 'Snow White and the Seven Dwarves';
 
 function generateToken(user) {
   const payload = {
