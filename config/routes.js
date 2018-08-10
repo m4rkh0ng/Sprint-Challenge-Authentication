@@ -1,6 +1,8 @@
 const axios = require('axios');
+const bcrypt = require('bcryptjs');
+const db = require('../database/dbConfig');
 
-const { authenticate } = require('./middlewares');
+const { authenticate, generateToken } = require('./middlewares');
 
 module.exports = server => {
   server.post('/api/register', register);
@@ -10,10 +12,44 @@ module.exports = server => {
 
 function register(req, res) {
   // implement user registration
+  const user = req.body;
+
+  const hash = bcrypt.hashSync(user.password, 14);
+  user.password = hash;
+
+  db('users')
+    .insert(user)
+    .then(ids => {
+      db('users')
+        .where({id: ids[0]})
+        .first()
+        .then(user => {
+          const token = generateToken(user);
+
+          res.status(201).json(token);
+        })
+    })
+    .catch(err => {
+      res.status(500).json({ errorMessage: `${err}`})
+    })
 }
 
 function login(req, res) {
   // implement user login
+  const userInfo = req.body;
+
+  db('users')
+    .where({ username: userInfo.username })
+    .first()
+    .then(user => {
+      if (user && bcrypt.compareSync(userInfo.password, user.password)) {
+        const token = generateToken(user);
+
+        res.status(200).json({ message: `Welcome, ${user.username}`})
+      } else {
+        res.status(401).json({ error: "Incorrect user information. Please try again."})
+      }
+    })
 }
 
 function getJokes(req, res) {
